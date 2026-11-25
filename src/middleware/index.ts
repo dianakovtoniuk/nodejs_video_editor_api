@@ -7,6 +7,8 @@ export const authenticate: RequestHandler = (req, res, next) => {
     "GET /api/user",
     "PUT /api/user",
     "DELETE /api/logout",
+    "POST /api/upload-video",
+    "GET /api/videos",
   ];
 
   if (routesToAuthenticate.includes(req.method + " " + req.url)) {

@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import * as User from "./controllers/user";
+import * as Video from "./controllers/video";
 
 export default (server: Express): void => {
   // ------------------------------------------------ //
@@ -17,4 +18,14 @@ export default (server: Express): void => {
 
   // Update a user info
   server.put("/api/user", User.updateUser);
+
+  // ------------------------------------------------ //
+  // ************ VIDEO ROUTES ************* //
+  // ------------------------------------------------ //
+
+  // Return the list of all the videos that a logged in user has uploaded
+  server.get("/api/videos", Video.getVideos);
+
+  // Upload a video file
+  server.post("/api/upload-video", Video.uploadVideo);
 };
