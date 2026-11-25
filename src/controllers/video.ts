@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
 import type { NextFunction, Request, Response } from "express";
 import * as util from "../../lib/util";
+import * as FF from "../../lib/FF";
 import DB from "../DB";
 
 // Return the list of all the videos that a logged in user has uploaded
@@ -49,8 +50,15 @@ export const uploadVideo = async (
     const fullPath = `./storage/${videoId}/original.${extension}`; // the original video path
     const file = await fs.open(fullPath, "w");
     const fileStream = file.createWriteStream();
+    const thumbnailPath = `./storage/${videoId}/thumbnail.jpg`;
 
     await pipeline(req, fileStream);
+
+    // Make a thumbnail for the video file
+    await FF.makeThumbnail(fullPath, thumbnailPath);
+
+    // Get the dimensions
+    const dimensions = await FF.getDimensions(fullPath);
 
     DB.update();
     DB.videos.unshift({
@@ -58,6 +66,7 @@ export const uploadVideo = async (
       videoId,
       name,
       extension,
+      dimensions,
       userId: req.userId!, // set by the authentication middleware
       extractedAudio: false,
       resizes: {},

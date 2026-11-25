@@ -10,6 +10,11 @@ export interface Session {
   token: string;
 }
 
+export interface Dimensions {
+  width: number;
+  height: number;
+}
+
 export interface Resize {
   processing: boolean;
 }
@@ -19,6 +24,7 @@ export interface Video {
   videoId: string;
   name: string;
   extension: string;
+  dimensions: Dimensions;
   userId: number;
   extractedAudio: boolean;
   resizes: Record<string, Resize>;
