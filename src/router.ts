@@ -32,6 +32,9 @@ export default (server: Express): void => {
   // Extract the audio for a video file (can only be done once per video)
   server.patch("/api/video/extract-audio", Video.extractAudio);
 
+  // Resize a video file (creates a new video file)
+  server.put("/api/video/resize", Video.resizeVideo);
+
   // Return a video asset to the client
   server.get("/get-video-asset", Video.getVideoAsset);
 };

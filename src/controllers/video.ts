@@ -6,7 +6,16 @@ import { pipeline } from "node:stream/promises";
 import type { NextFunction, Request, Response } from "express";
 import * as util from "../../lib/util";
 import * as FF from "../../lib/FF";
+import JobQueue from "../../lib/JobQueue";
 import DB from "../DB";
+
+const jobs = new JobQueue();
+
+interface ResizeBody {
+  videoId: string;
+  width: number | string;
+  height: number | string;
+}
 
 // Return the list of all the videos that a logged in user has uploaded
 export const getVideos = (req: Request, res: Response) => {
@@ -130,6 +139,40 @@ export const extractAudio = async (
   }
 };
 
+// Resize a video file (creates a new video file)
+export const resizeVideo = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const body: ResizeBody = req.body;
+  const videoId = body.videoId;
+  const width = Number(body.width);
+  const height = Number(body.height);
+
+  DB.update();
+  const video = DB.videos.find((video) => video.videoId === videoId);
+
+  if (!video) {
+    return next({ status: 404, message: "Video not found!" });
+  }
+
+  video.resizes[`${width}x${height}`] = { processing: true };
+  DB.save();
+
+  jobs.enqueue({
+    type: "resize",
+    videoId,
+    width,
+    height,
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "The video is now being processed!",
+  });
+};
+
 // Return a video asset to the client
 export const getVideoAsset = async (
   req: Request,
@@ -170,6 +213,21 @@ export const getVideoAsset = async (
       mimeType = "audio/aac";
       filename = `${video.name}-audio.aac`;
       break;
+    case "resize": {
+      const dimensions = req.query.dimensions;
+
+      if (typeof dimensions !== "string") {
+        return next({ status: 400, message: "Please specify the dimensions." });
+      }
+
+      file = await fs.open(
+        path.resolve("./storage", videoId, `${dimensions}.${video.extension}`),
+        "r"
+      );
+      mimeType = "video/mp4"; // Not a good practice! Videos are not always MP4
+      filename = `${video.name}-${dimensions}.${video.extension}`;
+      break;
+    }
     case "original":
       file = await fs.open(
         path.resolve("./storage", videoId, `original.${video.extension}`),

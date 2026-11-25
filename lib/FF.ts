@@ -97,3 +97,44 @@ export const extractAudio = (
     });
   });
 };
+
+export const resize = (
+  originalVideoPath: string,
+  targetVideoPath: string,
+  width: number,
+  height: number
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    // ffmpeg -i video.mp4 -vf scale=320:240 -c:a copy video-320x240.mp4
+    const ffmpeg = spawn("ffmpeg", [
+      "-i",
+      originalVideoPath,
+      "-vf",
+      `scale=${width}x${height}`,
+      "-c:a",
+      "copy",
+      "-threads",
+      "2",
+      "-loglevel",
+      "error",
+      "-y",
+      targetVideoPath,
+    ]);
+
+    ffmpeg.stderr.on("data", (data: Buffer) => {
+      console.log(data.toString("utf8"));
+    });
+
+    ffmpeg.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`FFmpeg exited with code ${code}`));
+      }
+    });
+
+    ffmpeg.on("error", (err) => {
+      reject(err);
+    });
+  });
+};
