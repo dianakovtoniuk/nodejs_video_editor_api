@@ -6,8 +6,10 @@
   "main": "dist/src/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "dev:cluster": "tsx watch src/cluster.ts",
     "build": "tsc",
     "start": "node dist/src/index.js",
+    "start:cluster": "node dist/src/cluster.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

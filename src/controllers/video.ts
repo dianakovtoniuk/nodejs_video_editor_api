@@ -1,4 +1,5 @@
 import path from "node:path";
+import cluster from "node:cluster";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import type { FileHandle } from "node:fs/promises";
@@ -9,7 +10,10 @@ import * as FF from "../../lib/FF";
 import JobQueue from "../../lib/JobQueue";
 import DB from "../DB";
 
-const jobs = new JobQueue();
+let jobs: JobQueue | undefined;
+if (cluster.isPrimary) {
+  jobs = new JobQueue();
+}
 
 interface ResizeBody {
   videoId: string;
@@ -160,12 +164,19 @@ export const resizeVideo = (
   video.resizes[`${width}x${height}`] = { processing: true };
   DB.save();
 
-  jobs.enqueue({
-    type: "resize",
-    videoId,
-    width,
-    height,
-  });
+  if (jobs) {
+    jobs.enqueue({
+      type: "resize",
+      videoId,
+      width,
+      height,
+    });
+  } else {
+    process.send?.({
+      messageType: "new-resize",
+      data: { videoId, width, height },
+    });
+  }
 
   res.status(200).json({
     status: "success",
