@@ -68,3 +68,32 @@ export const getDimensions = (fullPath: string): Promise<Dimensions> => {
     });
   });
 };
+
+export const extractAudio = (
+  originalVideoPath: string,
+  targetAudioPath: string
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    // ffmpeg -i video.mp4 -vn -c:a copy audio.aac
+    const ffmpeg = spawn("ffmpeg", [
+      "-i",
+      originalVideoPath,
+      "-vn",
+      "-c:a",
+      "copy",
+      targetAudioPath,
+    ]);
+
+    ffmpeg.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`FFmpeg exited with code ${code}`));
+      }
+    });
+
+    ffmpeg.on("error", (err) => {
+      reject(err);
+    });
+  });
+};

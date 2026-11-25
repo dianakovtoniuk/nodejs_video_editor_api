@@ -28,4 +28,10 @@ export default (server: Express): void => {
 
   // Upload a video file
   server.post("/api/upload-video", Video.uploadVideo);
+
+  // Extract the audio for a video file (can only be done once per video)
+  server.patch("/api/video/extract-audio", Video.extractAudio);
+
+  // Return a video asset to the client
+  server.get("/get-video-asset", Video.getVideoAsset);
 };
